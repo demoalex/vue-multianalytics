@@ -58,24 +58,32 @@ const install = function (Vue, initConf = {}, mixin) {
       Vue.modulesEnabled.push(moduleInstance)
     })
   }
-  // Handle vue-router if defined
-  if (initConf.routing && initConf.routing.vueRouter) {
-    initVueRouterGuard(Vue, initConf.routing)
-  }
 
   // Add to vue prototype and also from globals
   const analyticsPlugin = new AnalyticsPlugin(Vue.modulesEnabled)
 
   if (!initConf.returnModule) {
       Vue.prototype.$multianalytics = Vue.prototype.$ma = Vue.ma = analyticsPlugin
-    
-    
+
+
       // User can add its own implementation of an interface
       if (mixin) {
         Vue.prototype.$multianalyticsm =  Vue.prototype.$mam = Vue.mam =  mixin(analyticsPlugin)
       }
+
+      // Handle vue-router if defined
+      if (initConf.routing && initConf.routing.vueRouter) {
+        initVueRouterGuard(Vue.ma, initConf.routing)
+      }
   } else {
-    return mixin ? mixin(analyticsPlugin) : analyticsPlugin
+    var res = mixin ? mixin(analyticsPlugin) : analyticsPlugin
+
+    // Handle vue-router if defined
+    if (initConf.routing && initConf.routing.vueRouter) {
+      initVueRouterGuard(res, initConf.routing)
+    }
+
+    return res
   }
 
 }
@@ -108,7 +116,7 @@ const initVueRouterGuard = function (Vue, routing) {
       return
     }
     // Dispatch vue event using meta analytics value if defined otherwise fallback to route name
-    Vue.ma.trackView({viewName: to.meta.analytics || to[routing.preferredProperty]}, routing.ignoredModules)
+    analyticsPlugin.trackView({viewName: to.meta.analytics || to[routing.preferredProperty]}, routing.ignoredModules)
   })
 
   return routing.ignoredViews;
